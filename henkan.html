@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
+  <title>変換ツール（修正版・切り捨てチェック付き・数字末尾対応・スペース/カンマ正規化/始まりカッコ保留モード追加）</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #fefefe;
+      margin: 20px;
+      padding: 0;
+    }
+    h1, h2 {
+      text-align: center;
+      color: #d6336c;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    textarea {
+      width: 100%;
+      height: 150px;
+      margin-bottom: 10px;
+      padding: 10px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      resize: vertical;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin-right: 10px;
+      border: none;
+      border-radius: 4px;
+      background-color: #d6336c;
+      color: #fff;
+      cursor: pointer;
+    }
+    /* 変換するボタンをキレイな青色に変更 */
+    #convert {
+      background-color: #007BFF;
+    }
+    #convert:hover {
+      background-color: #0056b3;
+    }
+    button:hover {
+      background-color: #c22b63;
+    }
+    .options {
+      margin-bottom: 10px;
+    }
+    .options label {
+      font-size: 14px;
+      margin-right: 10px;
+      cursor: pointer;
+    }
+    .table-container {
+      margin-top: 20px;
+      overflow-x: auto;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-bottom: 20px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 6px 8px;
+      text-align: center;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    .button-group {
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>変換ツール</h1>
+    
+    <!-- 入力エリア -->
+    <textarea id="input" placeholder="ここに変換したいタグを入力してね"></textarea>
+    <div class="button-group">
+      <button id="convert">変換する</button>
+      <button id="clearInput">クリア</button>
+    </div>
+    
+    <div class="options">
+      <label>
+        <input type="checkbox" id="truncate" checked> 小数点1桁で切り捨てる
+      </label>
+      <label>
+        <input type="checkbox" id="normalizeSpaces" checked> スペース正規化（全角→半角＆連続半角1つに）
+      </label>
+      <label>
+        <input type="checkbox" id="normalizeCommas" checked> カンマ正規化（連続カンマを1つに）
+      </label>
+      <label>
+        <input type="checkbox" id="preserveOpen"> 始まりのカッコはそのままに
+      </label>
+    </div>
+    
+    <!-- 出力エリア -->
+    <textarea id="output" placeholder="変換結果がここに表示されるよ"></textarea>
+    <div class="button-group">
+      <button id="copy">コピーする</button>
+      <button id="clearOutput">クリア</button>
+    </div>
+    
+    <div class="table-container">
+      <h2>カッコの数・強調・弱化 一覧表</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>カッコの数</th>
+            <th>強調</th>
+            <th>弱化</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>1</td><td>1.05</td><td>0.95</td></tr>
+          <tr><td>2</td><td>1.10</td><td>0.91</td></tr>
+          <tr><td>3</td><td>1.16</td><td>0.86</td></tr>
+          <tr><td>4</td><td>1.22</td><td>0.82</td></tr>
+          <tr><td>5</td><td>1.28</td><td>0.78</td></tr>
+          <tr><td>6</td><td>1.34</td><td>0.75</td></tr>
+          <tr><td>7</td><td>1.41</td><td>0.71</td></tr>
+          <tr><td>8</td><td>1.48</td><td>0.68</td></tr>
+          <tr><td>9</td><td>1.55</td><td>0.65</td></tr>
+          <tr><td>10</td><td>1.63</td><td>0.61</td></tr>
+          <tr><td>11</td><td>1.71</td><td>0.58</td></tr>
+          <tr><td>12</td><td>1.80</td><td>0.56</td></tr>
+          <tr><td>13</td><td>1.89</td><td>0.53</td></tr>
+          <tr><td>14</td><td>1.98</td><td>0.51</td></tr>
+          <tr><td>15</td><td>2.08</td><td>0.48</td></tr>
+          <tr><td>16</td><td>2.18</td><td>0.46</td></tr>
+          <tr><td>17</td><td>2.28</td><td>0.44</td></tr>
+          <tr><td>18</td><td>2.39</td><td>0.42</td></tr>
+          <tr><td>19</td><td>2.50</td><td>0.40</td></tr>
+          <tr><td>20</td><td>2.65</td><td>0.38</td></tr>
+          <tr><td>21</td><td>2.79</td><td>0.36</td></tr>
+          <tr><td>22</td><td>2.93</td><td>0.34</td></tr>
+          <tr><td>23</td><td>3.07</td><td>0.33</td></tr>
+          <tr><td>24</td><td>3.23</td><td>0.31</td></tr>
+          <tr><td>25</td><td>3.39</td><td>0.30</td></tr>
+          <tr><td>26</td><td>3.56</td><td>0.28</td></tr>
+          <tr><td>27</td><td>3.73</td><td>0.27</td></tr>
+          <tr><td>28</td><td>3.90</td><td>0.26</td></tr>
+          <tr><td>29</td><td>4.12</td><td>0.24</td></tr>
+          <tr><td>30</td><td>4.32</td><td>0.23</td></tr>
+          <tr><td>31</td><td>4.54</td><td>0.22</td></tr>
+          <tr><td>32</td><td>4.76</td><td>0.21</td></tr>
+          <tr><td>33</td><td>5.00</td><td>0.20</td></tr>
+          <tr><td>34</td><td>5.25</td><td>0.19</td></tr>
+          <tr><td>35</td><td>5.52</td><td>0.18</td></tr>
+          <tr><td>36</td><td>5.79</td><td>0.17</td></tr>
+          <tr><td>37</td><td>6.07</td><td>0.16</td></tr>
+          <tr><td>38</td><td>6.36</td><td>0.15</td></tr>
+          <tr><td>39</td><td>6.70</td><td>0.14</td></tr>
+          <tr><td>40</td><td>7.04</td><td>0.14</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    // 強調のマッピングテーブル（中括弧）
+    const strongMapping = {
+      1: 1.05, 2: 1.10, 3: 1.16, 4: 1.22, 5: 1.28, 6: 1.34, 7: 1.41, 8: 1.48,
+      9: 1.55, 10: 1.63, 11: 1.71, 12: 1.80, 13: 1.89, 14: 1.98, 15: 2.08, 16: 2.18,
+      17: 2.28, 18: 2.39, 19: 2.50, 20: 2.65, 21: 2.79, 22: 2.93, 23: 3.07, 24: 3.23,
+      25: 3.39, 26: 3.56, 27: 3.73, 28: 3.90, 29: 4.12, 30: 4.32, 31: 4.54, 32: 4.76,
+      33: 5.00, 34: 5.25, 35: 5.52, 36: 5.79, 37: 6.07, 38: 6.36, 39: 6.70, 40: 7.04
+    };
+
+    // 弱化のマッピングテーブル（角括弧）
+    const weakMapping = {
+      1: 0.95, 2: 0.91, 3: 0.86, 4: 0.82, 5: 0.78, 6: 0.75, 7: 0.71, 8: 0.68,
+      9: 0.65, 10: 0.61, 11: 0.58, 12: 0.56, 13: 0.53, 14: 0.51, 15: 0.48, 16: 0.46,
+      17: 0.44, 18: 0.42, 19: 0.40, 20: 0.38, 21: 0.36, 22: 0.34, 23: 0.33, 24: 0.31,
+      25: 0.30, 26: 0.28, 27: 0.27, 28: 0.26, 29: 0.24, 30: 0.23, 31: 0.22, 32: 0.21,
+      33: 0.20, 34: 0.19, 35: 0.18, 36: 0.17, 37: 0.16, 38: 0.15, 39: 0.14, 40: 0.14
+    };
+
+    // チェックボックスに応じたフォーマット関数
+    function formatNumber(num) {
+      const truncate = document.getElementById("truncate").checked;
+      if (truncate) {
+        return (Math.floor(num * 10) / 10).toFixed(1);
+      } else {
+        return (Math.floor(num * 100) / 100).toFixed(2);
+      }
+    }
+
+    // 指定された閉じ括弧(stopChar)がstopCount個連続するまで解析する関数
+    function parseUntil(text, index, stopChar, stopCount) {
+      let result = "";
+      while (index < text.length) {
+        if (text[index] === '{' || text[index] === '[') {
+          let group = parseGroup(text, index);
+          result += group.converted;
+          index = group.index;
+        } else if (text[index] === stopChar) {
+          let count = 0;
+          let temp = index;
+          while (temp < text.length && text[temp] === stopChar) {
+            count++;
+            temp++;
+          }
+          if (count >= stopCount) {
+            index += stopCount;
+            return { result, index };
+          } else {
+            result += text[index];
+            index++;
+          }
+        } else {
+          result += text[index];
+          index++;
+        }
+      }
+      return { result, index };
+    }
+
+    // グループ（括弧で囲まれた部分）を解析する関数
+    function parseGroup(text, index) {
+      let openChar = text[index];
+      let closeChar = openChar === '{' ? '}' : ']';
+      let openCount = 0;
+      while (index < text.length && text[index] === openChar) {
+        openCount++;
+        index++;
+      }
+      let innerParsed = parseUntil(text, index, closeChar, openCount);
+      let innerContent = innerParsed.result;
+      index = innerParsed.index;
+      let converted = "";
+      if (innerContent.trim() !== "") {
+        let mappedValue = openChar === '{' ? strongMapping[openCount] : weakMapping[openCount];
+        if (document.getElementById("preserveOpen").checked) {
+          // 始まりのカッコはそのままにして、閉じる部分のみ変換
+          if (/\d$/.test(innerContent)) {
+            converted = openChar.repeat(openCount) + innerContent + " ::";
+          } else {
+            converted = openChar.repeat(openCount) + innerContent + "::";
+          }
+        } else {
+          if (/\d$/.test(innerContent)) {
+            converted = formatNumber(mappedValue) + "::" + innerContent + " ::";
+          } else {
+            converted = formatNumber(mappedValue) + "::" + innerContent + "::";
+          }
+        }
+      }
+      return { converted, index };
+    }
+
+    // テキスト全体を解析する関数
+    function parseText(text, index) {
+      let result = "";
+      while (index < text.length) {
+        if (text[index] === '{' || text[index] === '[') {
+          let group = parseGroup(text, index);
+          result += group.converted;
+          index = group.index;
+        } else {
+          result += text[index];
+          index++;
+        }
+      }
+      return { result, index };
+    }
+
+    function convertTags(input) {
+      return parseText(input, 0).result;
+    }
+
+    // 変換ボタンの処理
+    document.getElementById("convert").addEventListener("click", function() {
+      const inputText = document.getElementById("input").value;
+      let converted = convertTags(inputText);
+
+      // スペース正規化処理：全角スペースを半角に変換し、連続する半角スペースを1つに
+      if (document.getElementById("normalizeSpaces").checked) {
+        converted = converted.replace(/　/g, ' ').replace(/ +/g, ' ');
+      }
+
+      // カンマ正規化処理：連続するカンマとその間のスペースを1つのカンマに
+      if (document.getElementById("normalizeCommas").checked) {
+        converted = converted.replace(/(,\s*){2,}/g, ',');
+      }
+
+      document.getElementById("output").value = converted;
+    });
+
+    // コピーボタンの処理 (Output)
+    document.getElementById("copy").addEventListener("click", function() {
+      const outputTextArea = document.getElementById("output");
+      outputTextArea.select();
+      document.execCommand("copy");
+    });
+
+    // クリアボタンの処理 (Output)
+    document.getElementById("clearOutput").addEventListener("click", function() {
+      document.getElementById("output").value = "";
+    });
+
+    // クリアボタンの処理 (Input)
+    document.getElementById("clearInput").addEventListener("click", function() {
+      document.getElementById("input").value = "";
+    });
+  </script>
+</body>
+</html>
