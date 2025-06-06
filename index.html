@@ -28,6 +28,7 @@
       border: 1px solid #ccc;
       border-radius: 4px;
       resize: vertical;
+      box-sizing: border-box; /* 追記：paddingがwidthに影響しないようにするため */
     }
     button {
       padding: 10px 20px;
@@ -83,7 +84,6 @@
   <div class="container">
     <h1>変換ツール</h1>
     
-    <!-- 入力エリア -->
     <textarea id="input" placeholder="ここに変換したいタグを入力してね"></textarea>
     <div class="button-group">
       <button id="convert">変換する</button>
@@ -92,7 +92,7 @@
     
     <div class="options">
       <label>
-        <input type="checkbox" id="truncate" checked> 小数点1桁で切り捨てる
+        <input type="checkbox" id="truncate" checked> 小数点1桁で切り上げる
       </label>
       <label>
         <input type="checkbox" id="normalizeSpaces" checked> スペース正規化（全角→半角＆連続半角1つに）
@@ -105,7 +105,6 @@
       </label>
     </div>
     
-    <!-- 出力エリア -->
     <textarea id="output" placeholder="変換結果がここに表示されるよ"></textarea>
     <div class="button-group">
       <button id="copy">コピーする</button>
@@ -191,9 +190,9 @@
     function formatNumber(num) {
       const truncate = document.getElementById("truncate").checked;
       if (truncate) {
-        return (Math.floor(num * 10) / 10).toFixed(1);
+        return (Math.ceil(num * 10) / 10).toFixed(1);
       } else {
-        return (Math.floor(num * 100) / 100).toFixed(2);
+        return (Math.ceil(num * 100) / 100).toFixed(2);
       }
     }
 
@@ -295,7 +294,13 @@
         converted = converted.replace(/(,\s*){2,}/g, ',');
       }
 
-      document.getElementById("output").value = converted;
+      // 【改善案2】前後がアルファベットか数字で囲まれている"_"を半角スペースに変換
+      converted = converted.replace(/([a-zA-Z0-9])_([a-zA-Z0-9])/g, '$1 $2');
+      
+      // 【改善案3】カンマの横はかならず半角スペース1つ分空いた状態にする
+      converted = converted.replace(/\s*,\s*/g, ', ');
+
+      document.getElementById("output").value = converted.trim();
     });
 
     // コピーボタンの処理 (Output)
